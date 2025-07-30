@@ -1,0 +1,57 @@
+<!DOCTYPE html><html>
+<head>
+  <title>NodiPath Global - River Vessel Tracker</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    body { margin: 0; padding: 0; }
+    #map { height: 100vh; width: 100vw; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>  <script>
+    const map = L.map('map').setView([23.7, 90.4], 6); // Centered on Bangladesh
+
+    // OpenStreetMap layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Simulated Bangladesh boat data
+    const bdBoats = [
+      { name: "MV Rocket-1", type: "Steamer", lat: 23.701, lng: 90.368, speed: 18, dest: "Barisal" },
+      { name: "MV Karnafuli", type: "Cargo", lat: 22.35, lng: 91.833, speed: 12, dest: "Chattogram" },
+      { name: "MV Suravi-9", type: "Launch", lat: 23.448, lng: 90.62, speed: 14, dest: "Chandpur" }
+    ];
+
+    const markers = [];
+
+    bdBoats.forEach((boat, index) => {
+      const marker = L.marker([boat.lat, boat.lng]).addTo(map)
+        .bindPopup(`<b>${boat.name}</b><br>Type: ${boat.type}<br>Speed: ${boat.speed} km/h<br>Destination: ${boat.dest}`);
+      markers.push({ marker, data: boat });
+    });
+
+    // Simulate movement
+    setInterval(() => {
+      markers.forEach(({ marker, data }) => {
+        const latShift = (Math.random() - 0.5) * 0.01;
+        const lngShift = (Math.random() - 0.5) * 0.01;
+        data.lat += latShift;
+        data.lng += lngShift;
+        marker.setLatLng([data.lat, data.lng]);
+      });
+    }, 5000);
+
+    // Optionally embed global vessel map
+    // const iframe = L.control({position: 'topright'});
+    // iframe.onAdd = function () {
+    //   const div = L.DomUtil.create('div');
+    //   div.innerHTML = '<iframe src="https://www.vesselfinder.com" width="300" height="200"></iframe>';
+    //   return div;
+    // };
+    // iframe.addTo(map);
+  </script></body>
+</html>

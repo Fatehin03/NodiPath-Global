@@ -1,57 +1,96 @@
-<!DOCTYPE html><html>
+<!DOCTYPE html><html lang="en">
 <head>
-  <title>NodiPath Global - River Vessel Tracker</title>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <title>NodiPath Global 3D - CesiumJS</title>
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.114/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.114/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
   <style>
-    body { margin: 0; padding: 0; }
-    #map { height: 100vh; width: 100vw; }
+    html, body, #cesiumContainer {
+      width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+      font-family: sans-serif;
+    }
+    .cesium-infoBox-description {
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
-  <div id="map"></div>  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>  <script>
-    const map = L.map('map').setView([23.7, 90.4], 6); // Centered on Bangladesh
+  <div id="cesiumContainer"></div>
+  <script>
+    // Set up Cesium viewer
+    window.CESIUM_BASE_URL = "https://cesium.com/downloads/cesiumjs/releases/1.114/Build/Cesium/";
+    const viewer = new Cesium.Viewer('cesiumContainer', {
+      terrainProvider: Cesium.createWorldTerrain(),
+      timeline: false,
+      animation: false,
+      baseLayerPicker: true,
+      sceneModePicker: true,
+      navigationHelpButton: false,
+      geocoder: false,
+    });viewer.scene.globe.enableLighting = true;
 
-    // OpenStreetMap layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 18,
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+// Simulated boats in Bangladesh
+const boats = [
+  {
+    name: "MV Rocket-1",
+    type: "Steamer",
+    position: Cesium.Cartesian3.fromDegrees(90.368, 23.701),
+    speed: "18 km/h",
+    destination: "Barisal"
+  },
+  {
+    name: "MV Karnafuli",
+    type: "Cargo",
+    position: Cesium.Cartesian3.fromDegrees(91.833, 22.35),
+    speed: "12 km/h",
+    destination: "Chattogram"
+  },
+  {
+    name: "MV Suravi-9",
+    type: "Launch",
+    position: Cesium.Cartesian3.fromDegrees(90.62, 23.448),
+    speed: "14 km/h",
+    destination: "Chandpur"
+  }
+];
 
-    // Simulated Bangladesh boat data
-    const bdBoats = [
-      { name: "MV Rocket-1", type: "Steamer", lat: 23.701, lng: 90.368, speed: 18, dest: "Barisal" },
-      { name: "MV Karnafuli", type: "Cargo", lat: 22.35, lng: 91.833, speed: 12, dest: "Chattogram" },
-      { name: "MV Suravi-9", type: "Launch", lat: 23.448, lng: 90.62, speed: 14, dest: "Chandpur" }
-    ];
+boats.forEach((boat, index) => {
+  viewer.entities.add({
+    name: boat.name,
+    position: boat.position,
+    point: {
+      pixelSize: 10,
+      color: Cesium.Color.CYAN,
+      outlineColor: Cesium.Color.BLUE,
+      outlineWidth: 2
+    },
+    description: `
+      <strong>${boat.name}</strong><br/>
+      Type: ${boat.type}<br/>
+      Speed: ${boat.speed}<br/>
+      Destination: ${boat.destination}`
+  });
+});
 
-    const markers = [];
+// Fly to Bangladesh view
+viewer.camera.flyTo({
+  destination: Cesium.Cartesian3.fromDegrees(90.4, 23.7, 800000)
+});
 
-    bdBoats.forEach((boat, index) => {
-      const marker = L.marker([boat.lat, boat.lng]).addTo(map)
-        .bindPopup(`<b>${boat.name}</b><br>Type: ${boat.type}<br>Speed: ${boat.speed} km/h<br>Destination: ${boat.dest}`);
-      markers.push({ marker, data: boat });
-    });
+// Optional: Simulate small movement every 10s
+setInterval(() => {
+  boats.forEach((boat, i) => {
+    const latShift = (Math.random() - 0.5) * 0.05;
+    const lonShift = (Math.random() - 0.5) * 0.05;
+    const cartographic = Cesium.Cartographic.fromCartesian(boat.position);
+    const newLat = Cesium.Math.toDegrees(cartographic.latitude) + latShift;
+    const newLon = Cesium.Math.toDegrees(cartographic.longitude) + lonShift;
+    boat.position = Cesium.Cartesian3.fromDegrees(newLon, newLat);
+    viewer.entities.values[i].position = boat.position;
+  });
+}, 10000);
 
-    // Simulate movement
-    setInterval(() => {
-      markers.forEach(({ marker, data }) => {
-        const latShift = (Math.random() - 0.5) * 0.01;
-        const lngShift = (Math.random() - 0.5) * 0.01;
-        data.lat += latShift;
-        data.lng += lngShift;
-        marker.setLatLng([data.lat, data.lng]);
-      });
-    }, 5000);
-
-    // Optionally embed global vessel map
-    // const iframe = L.control({position: 'topright'});
-    // iframe.onAdd = function () {
-    //   const div = L.DomUtil.create('div');
-    //   div.innerHTML = '<iframe src="https://www.vesselfinder.com" width="300" height="200"></iframe>';
-    //   return div;
-    // };
-    // iframe.addTo(map);
-  </script></body>
+  </script>
+</body>
 </html>
